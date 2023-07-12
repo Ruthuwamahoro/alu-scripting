@@ -4,7 +4,7 @@ import json
 import sys
 import urllib.request
 
-def number_of_subscribers(subreddit):
+def number_of_subscribers (subreddit):
     url = "https://www.reddit.com/r/{}/about.json".format(subreddit)
     headers = {"User-Agent": "Mozilla/5.0"}
     req = urllib.request.Request(url, headers=headers)
@@ -12,7 +12,8 @@ def number_of_subscribers(subreddit):
     try:
         with urllib.request.urlopen(req) as response:
             data = response.read().decode('utf-8')
-            subscribers = json.loads(data).get("data", {}).get("subscribers", 0)
+            subscribers = json.loads(data).get("data", 
+                                               {}).get("subscribers", 0)
             return subscribers
     except urllib.error.HTTPError as e:
         if e.code == 404:
