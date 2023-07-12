@@ -13,10 +13,10 @@ def number_of_subscribers ( subreddit ):
         with urllib.request.urlopen(req) as response:
             data = response.read().decode('utf-8')
             subscribers = (
-		json.loads(data)
-		.get("data", {})
-		.get("subscribers", 0)
-	    )
+                json.loads(data)
+                .get("data",{})
+                .get("subscribers", 0)
+            )
             return subscribers
     except urllib.error.HTTPError as e:
         if e.code == 404:
