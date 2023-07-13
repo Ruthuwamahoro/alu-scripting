@@ -1,4 +1,4 @@
-#!//bin/python3
+#!usr/bin/python3
 """print the titles of the first 10 host posts"""
 import argparse
 import json
