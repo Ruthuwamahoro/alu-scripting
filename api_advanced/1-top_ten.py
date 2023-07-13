@@ -2,6 +2,7 @@
 """print the titles of the first 10 host posts"""
 import argparse
 import json
+import sys
 import urllib.request
 
 
@@ -13,10 +14,12 @@ def top_ten(subreddit):
         with urllib.request.urlopen(requesting) as response:
             data = json.loads(response.read().decode('utf-8'))
             posts = data["data"]["children"]
-
+	  
             for post in posts:
                 title = post["data"]["title"]
-                print(title.encode('unicode_escape').decode())
+                sys.stdout.buffer.write(title.encode(sys.stdout.encoding, errors='replace'))
+                sys.stdout.buffer.write(b'\n')
+          
     except urllib.error.HTTPError as e:
         if e.code == 404:
             print("None")
