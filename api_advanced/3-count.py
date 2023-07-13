@@ -1,57 +1,54 @@
 #!/usr/bin/python3
-"""parses the title of all hot articles"""
+"""parse the title of all hot articles
+"""
+
 import json
-import sys
-import urllib.request
-from collections import Counter
+import requests
 
 
-def count_words(subreddit, word_list, after=None, counts=None):
-    if counts is None:
-        counts = Counter()
+def count_words(subreddit, word_list, after="", count=[]):
 
-    if after is None:
-        url = "https://www.reddit.com/r/{}/hot.json?limit=100".format(subreddit)
-    else:
-        url = "https://www.reddit.com/r/{}/hot.json?limit=100&after={}".format(subreddit, after)
+    if after == "":
+        count = [0] * len(word_list)
 
-    headers = {"User-Agent": "Mozilla/5.0"}
+    url = "https://www.reddit.com/r/{}/hot.json".format(subreddit)
+    response = requests.get(url,
+                            params={'after': after},
+                            allow_redirects=False,
+                            headers={'user-agent': 'bhalut'})
 
-    req = urllib.request.Request(url, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
 
-    try:
-        with urllib.request.urlopen(req) as response:
-            data = json.loads(response.read().decode())
-            posts = data["data"]["children"]
+        for topic in (data['data']['children']):
+            for word in topic['data']['title'].split():
+                for i in range(len(word_list)):
+                    if word_list[i].lower() == word.lower():
+                        count[i] += 1
 
-            for post in posts:
-                title = post["data"]["title"]
-                title_words = title.lower().split()
-                counts.update(title_words)
+        after = data['data']['after']
+        if after is None:
+            save = []
+            for i in range(len(word_list)):
+                for j in range(i + 1, len(word_list)):
+                    if word_list[i].lower() == word_list[j].lower():
+                        save.append(j)
+                        count[i] += count[j]
 
-            after = data["data"]["after"]
+            for i in range(len(word_list)):
+                for j in range(i, len(word_list)):
+                    if (count[j] > count[i] or
+                            (word_list[i] > word_list[j] and
+                             count[j] == count[i])):
+                        aux = count[i]
+                        count[i] = count[j]
+                        count[j] = aux
+                        aux = word_list[i]
+                        word_list[i] = word_list[j]
+                        word_list[j] = aux
 
-            if after is not None:
-                return count_words(subreddit, word_list, after=after, counts=counts)
-            else:
-                sorted_counts = sorted(counts.items(), key=lambda x: (-x[1], x[0]))
-                for word in word_list:
-                    count = next((count for keyword, count in sorted_counts if keyword ==
-		    word.lower()), 0)
-                    if count > 0:
-                    	print("{}: {}".format(word.lower(),count))
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            return None
+            for i in range(len(word_list)):
+                if (count[i] > 0) and i not in save:
+                    print("{}: {}".format(word_list[i].lower(), count[i]))
         else:
-            raise
-
-
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: {} <subreddit> <list of keywords>".format(sys.argv[0]))
-        print("Ex: {} programming 'python java javascript'".format(sys.argv[0]))
-    else:
-        subreddit = sys.argv[1]
-        word_list = sys.argv[2:]
-        count_words(subreddit, word_list)
+            count_words(subreddit, word_list, after, count)
